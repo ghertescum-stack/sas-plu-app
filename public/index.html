@@ -1,33 +1,455 @@
-SAS Due Diligence
-Usage interne
-1
-Qualification parcelle
-2
-PLU Fetcher
-3
-PLU Reader
-Filtre de qualification amont — À partir de l'adresse, l'outil interroge le GPU et les bases publiques (Géorisques, Mérimée) pour scorer les 10 familles techniques. Résultat en quelques secondes.
-PARAMÈTRES DU BIEN
-ADRESSE COMPLÈTE
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SAS Due Diligence â PLU</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0D2219;--s1:#142D1F;--s2:#1A3A28;--s3:#1F4D3D;--cr:#F5F1E8;--c2:#D4CFC4;--c3:#9DB5A8;--c4:#6B8A7A;--gl:#4A9478;--acc:#8FBF9F;--ok:#4CAF7D;--wn:#E8A832;--er:#D44C3A;--b:rgba(245,241,232,.08);--b2:rgba(245,241,232,.15)}
+html,body{height:100%;background:var(--bg);color:var(--cr);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6}
+body{display:flex;flex-direction:column}
+.bar{background:var(--s2);border-bottom:1px solid var(--b2);padding:0 24px;display:flex;align-items:stretch;gap:0;flex-shrink:0}
+.brand{font-size:16px;font-weight:600;padding:14px 20px 14px 0;margin-right:20px;border-right:1px solid var(--b);color:var(--cr);display:flex;align-items:center;gap:8px}
+.brand span{font-size:9px;background:rgba(143,191,159,.15);border:1px solid rgba(143,191,159,.25);color:var(--acc);padding:2px 7px;border-radius:3px;font-family:'DM Mono',monospace;letter-spacing:.08em}
+.tabs{display:flex;align-items:stretch}
+.tab{display:flex;align-items:center;gap:6px;padding:0 16px;font-size:12px;font-weight:500;color:var(--c3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;transition:all .15s}
+.tab:hover{color:var(--c2)}
+.tab.on{color:var(--cr);border-bottom-color:var(--acc)}
+.tab em{font-style:normal;font-family:'DM Mono',monospace;font-size:10px;background:var(--s1);border:1px solid var(--b2);padding:1px 5px;border-radius:3px;color:var(--c4)}
+.tab.on em{background:var(--s3);border-color:var(--gl);color:var(--acc)}
+.tab.ck em{background:rgba(76,175,125,.1);border-color:rgba(76,175,125,.2);color:var(--ok)}
+.addr-pill{margin-left:auto;align-self:center;font-family:'DM Mono',monospace;font-size:10px;color:var(--c4);background:var(--s1);border:1px solid var(--b);padding:3px 10px;border-radius:3px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none}
+.main{flex:1;overflow-y:auto}
+.pane{display:none;padding:28px 32px 60px;max-width:880px;margin:0 auto}
+.pane.on{display:block}
+.info{background:var(--s2);border:1px solid var(--b2);border-radius:5px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--c3)}
+.info b{color:var(--c2)}
+.lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--c3);margin-bottom:4px;display:block}
+.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--c3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)}
+input,select,textarea{background:var(--s1);border:1px solid var(--b);color:var(--cr);padding:9px 12px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:var(--gl)}
+select option{background:var(--s2)}
+input::placeholder{color:var(--c4)}
+.row{display:flex;gap:10px;margin-bottom:10px}
+.f{display:flex;flex-direction:column;gap:4px;flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 22px;background:var(--s3);color:var(--cr);border:1px solid var(--gl);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;width:100%;margin-top:4px}
+.btn:hover:not(:disabled){background:#2D6B56}
+.btn:disabled{opacity:.4;cursor:default}
+.pg{margin:14px 0;display:none}
+.pg-bar{height:4px;background:rgba(245,241,232,.07);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.pg-fill{height:100%;background:linear-gradient(90deg,#2D6B56,var(--acc));width:0%;transition:width .4s;border-radius:2px}
+.pg-txt{font-size:11px;color:var(--c4)}
+.err-box{background:rgba(212,76,58,.07);border:1px solid rgba(212,76,58,.2);border-radius:4px;padding:9px 13px;font-size:12px;color:var(--c2);margin-bottom:10px;display:none}
+.res{margin-top:20px}
+.card{background:var(--s1);border:1px solid var(--b);border-radius:6px;padding:12px 16px;margin-bottom:10px}
+.card.zone{background:var(--s3);border-color:var(--gl)}
+.card.alert{background:rgba(212,76,58,.07);border-color:rgba(212,76,58,.22)}
+.card-h{display:fle{;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.card-body{margin-top:10px;display:none}
+.card.open .card-body{display:block}
+.kv{display:grid;grid-template-columns:180px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--b);font-size:12px}
+.kv:last-child{border:none}
+.k{color:var(--c4);font-size:11px}
+.v{color:var(--c2)}
+.v.hl{color:var(--cr);font-weight:500}
+.v.ok{color:var(--ok)}
+.v.wn{color:var(--wn)}
+.v.er{color:var(--er)}
+.badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px}
+.b-ok{background:rgba(76,175,125,.1);color:var(--ok);border:1px solid rgba(76,175,125,.2)}
+.b-wn{background:rgba(232,168,50,.1);color:var(--wn);border:1px solid rgba(232,168,50,.2)}
+.b-er{background:rgba(212,76,58,.1);color:var(--er);border:1px solid rgba(212,76,58,.2)}
+.b-na{background:rgba(107,123,141,.08);color:var(--c4);border:1px solid rgba(107,123,141,.15)}
+.score{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--b);border:1px solid var(--b2);border-radius:5px;overflow:hidden;margin-bottom:16px}
+.sc{background:var(--s1);padding:10px 6px;text-align:center}
+.sc-n{font-size:24px;font-weight:600;line-height:1}
+.sc-l{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--c4);margin-top:2px}
+.tag{font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid var(--b2);color:var(--c3);display:inline-block;margin:2px}
+.tag.hl{color:var(--acc);border-color:rgba(143,191,159,.25);background:rgba(143,191,159,.07)}
+.tag.ok{color:var(--ok);border-color:rgba(76,175,125,.25);background:rgba(76,175,125,.07)}
+.tag.wn{color:var(--wn);border-color:rgba(232,168,50,.2);background:rgba(232,168,50,.06)}
+.doc-row{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--s1);border-radius:4px;border:1px solid var(--b);margin-bottom:5px}
+.doc-row.star{border-color:rgba(143,191,159,.3);background:rgba(143,191,159,.04)}
+.doc-path{font-size:9px;font-family:'DM Mono',monospace;color:var(--c4);min-width:100px;flex-shrink:0}
+.doc-info{flex:1}
+.doc-t{font-size:12px;color:var(--c2)}
+.doc-n{font-family:'DM Mono',monospace;font-size:9px;color:var(--c4)}
+.doc-btns{display:flex;gap:4px;flex-shrink:0}
+.dbtn{padding:4px 8px;border-radius:3px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:all .15s;border:1px solid;white-space:nowrap}
+.dbtn-o{background:transparent;border-color:var(--b);color:var(--c3)}
+.dbtn-o:hover{border-color:var(--b2);color:var(--cr)}
+.dbtn-r{background:var(--s3);border-color:var(--gl);color:var(--acc)}
+.dbtn-r:hover{background:#2D6B56;color:var(--cr)}
+.drop{border:1px dashed var(--b2);border-radius:6px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s1);position:relative;margin-bottom:12px}
+.drop:hover,.drop.drag{border-color:var(--gl);background:rgba(74,148,120,.04)}
+.drop.has{border-style:solid;border-color:rgba(76,175,125,.3)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-m{font-size:14px;color:var(--c2);font-weight:500;margin-bottom:2px}
+.drop-s{font-size:11px;color:var(--c4)}
+.drop-f{font-family:'DM Mono',monospace;font-size:11px;color:var(--ok);margin-top:6px}
+.raw{background:var(--s1);border:1px solid var(--b2);border-radius:5px;overflow:hidden;margin-top:14px}
+.raw-h{display:flex;justify-content:space-between;align-items:center;padding:8px 13px;background:var(--s2);border-bottom:1px solid var(--b)}
+.raw-t{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--c2)}
+.raw-b{padding:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--c2);line-height:1.8;white-space:pre-wrap;max-height:380px;overflow-y:auto}
+.gbtn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:var(--s3);border:1px solid var(--gl);border-radius:3px;font-size:11px;color:var(--acc);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.gbtn:hover{background:#2D6B56;color:var(--cr)}
+.spin{display:inline-block;animation:sp .7s linear infinite}
+@keyframes sp{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.fade{animation:fd .3s ease both}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.nb{background:rgba(232,168,50,.06);border-left:3px solid var(--wn);padding:8px 11px;font-size:11px;color:var(--c2);margin-top:8px;border-radius:0 4px 4px 0}
+.nb.ok{border-left-color:var(--ok);background:rgba(76,175,125,.06)}
+@media(max-width:640px){.kv{grid-template-columns:1fr}.row{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="brand">SAS Due Diligence <span>Usage interne</span></div>
+  <div class="tabs">
+    <button class="tab on" id="tb1" onclick="sw(1)"><em id="tn1">1</em> Qualification parcelle</button>
+    <button class="tab" id="tb2" onclick="sw(2)"><em id="tn2">2</em> PLU Fetcher</button>
+    <button class="tab" id="tb3" onclick="sw(3)"><em id="tn3">3</em> PLU Reader</button>
+  </div>
+  <div class="addr-pill" id="apill"></div>
+</div>
 
-DESTINATION ACTUELLE
-        Habitation
-        Commerce / ERP
-        Bureaux
-        Mixte
-        Autre
-      
-DESTINATION CIBLE
-        Habitation
-        Commerce / ERP
-        Bureaux
-        Mixte hab + commerce
-        À définir
-      
-ANNÉE DE CONSTRUCTION
-        Avant 1949
-        1949 – 1997
-        Après 1997
-        Inconnue
-      
-Lancer la qualification →
+<div class="main">
+
+<!-- TAB 1 -->
+<div class="pane on" id="p1">
+  <div class="info"><b>Filtre de qualification amont</b> â Adresse â GPU â scoring 10 familles techniques. RÃ©sultat en quelques secondes.</div>
+  <div class="sec">ParamÃ¨tres du bien</div>
+  <div class="f" style="margin-bottom:10px"><label class="lbl">Adresse complÃ¨te</label>
+    <input id="qa" type="text" placeholder="20 rue Albert Sarraut, 78000 Versailles" onkeydown="if(event.key==='Enter')q1()"/>
+  </div>
+  <div class="row">
+    <div class="f"><label class="lbl">Destination actuelle</label>
+      <select id="qda"><option value="habitation">Habitation</option><option value="commerce">Commerce / ERP</option><option value="bureau">Bureaux</option><option value="mixte">Mixte</option><option value="autre">Autre</option></select>
+    </div>
+    <div class="f"><label class="lbl">Destination cible</label>
+      <select id="qdc"><option value="habitation">Habitation</option><option value="commerce">Commerce / ERP</option><option value="bureau">Bureaux</option><option value="mixte">Mixte hab + commerce</option><option value="autre">Ã dÃ©finir</option></select>
+    </div>
+    <div class="f"><label class="lbl">AnnÃ©e de construction</label>
+      <select id="qan"><option value="avant1949">Avant 1949</option><option value="1949-1997">1949 â 1997</option><option value="apres1997">AprÃ¨s 1997</option><option value="inconnu">Inconnue</option></select>
+    </div>
+  </div>
+  <button class="btn" id="qbtn" onclick="q1()">Lancer la qualification â</button>
+  <div class="err-box" id="qe"></div>
+  <div class="pg" id="qpg"><div class="pg-bar"><div class="pg-fill" id="qf"></div></div><div class="pg-txt" id="qs">â¦</div></div>
+  <div class="res" id="qr" style="display:none"></div>
+</div>
+
+<!-- TAB 2 -->
+<div class="pane" id="p2">
+  <div class="info"><b>PLU Fetcher</b> â Interroge le GÃ©oportail de l'Urbanisme. Zone PLU, prescriptions, toutes les piÃ¨ces Ã©crites. RÃ¨glement identifiÃ© â PLU Reader en un clic.</div>
+  <div class="row" style="margin-bottom:14px">
+    <div class="f" style="margin:0"><input id="fa" type="text" placeholder="20 rue Albert Sarraut, 78000 Versailles" onkeydown="if(event.key==='Enter')q2()"/></div>
+    <button class="btn" id="fbtn" onclick="q2()" style="width:auto;white-space:nowrap">RÃ©cupÃ©rer â</button>
+  </div>
+  <div class="err-box" id="fe"></div>
+  <div class="pg" id="fpg"><div class="pg-bar"><div class="pg-fill" id="ff"></div></div><div class="pg-txt" id="fs">â¦</div></div>
+  <div id="fr" style="display:none"></div>
+</div>
+
+<!-- TAB 3 -->
+<div class="pane" id="p3">
+  <div class="info"><b>PLU Reader</b> â Uploader le rÃ¨glement de zone (PDF). L'IA extrait tous les articles F2 : emprise, hauteur, prospects, destinations, stationnement, bonne desserte TC, signaux dÃ©cisionnels investisseur.</div>
+  <div class="drop" id="rdrop">
+    <input type="file" accept=".pdf" onchange="rfile(event)"/>
+    <div class="drop-m">DÃ©poser le rÃ¨glement Ã©crit PLU ici</div>
+    <div class="drop-s">PDF Â· max 25 Mo Â· ou cliquer pour sÃ©lectionner</div>
+    <div class="drop-f" id="rfn"></div>
+  </div>
+  <div class="sec">ParamÃ¨tres du bien</div>
+  <div class="f" style="margin-bottom:10px"><label class="lbl">Adresse</label><input id="ra" type="text" placeholder="20 rue Albert Sarraut, 78000 Versailles"/></div>
+  <div class="row">
+    <div class="f"><label class="lbl">Zone PLU <span style="font-size:9px;color:var(--c4);text-transform:none;letter-spacing:0"> â si connue</span></label><input id="rz" type="text" placeholder="UGe"/></div>
+    <div class="f"><label class="lbl">Destination actuelle</label>
+      <select id="rda"><option value="habitation">Habitation</option><option value="commerce">Commerce/ERP</option><option value="bureau">Bureaux</option><option value="mixte">Mixte</option><option value="autre">Autre</option></select>
+    </div>
+    <div class="f"><label class="lbl">Destination cible</label>
+      <select id="rdc"><option value="habitation">Habitation</option><option value="commerce">Commerce/ERP</option><option value="bureau">Bureaux</option><option value="mixte">Mixte hab+commerce</option><option value="autre">Ã dÃ©finir</option></select>
+    </div>
+  </div>
+  <button class="btn" id="rbtn" onclick="q3()" disabled>Analyser le PLU â</button>
+  <div class="err-box" id="re"></div>
+  <div class="pg" id="rpg"><div class="pg-bar"><div class="pg-fill" id="rf2"></div></div><div class="pg-txt" id="rs">â¦</div></div>
+  <div id="rr" style="display:none"></div>
+</div>
+</div>
+
+<script>
+var G=null,rF=null;
+var $=function(i){return document.getElementById(i)};
+var tick=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+function sw(n){
+  [1,2,3].forEach(function(i){$('p'+i).classList.toggle('on',i===n);$('tb'+i).classList.toggle('on',i===n)});
+  if(G){if(n===2&&!$('fa').value)$('fa').value=G.label||'';if(n===3&&!$('ra').value)$('ra').value=G.label||'';}
+}
+function pg(id,p,s){$(id+'f').style.width=p+'%';if(s)$(id+'s').textContent=s}
+function pgv(id,show){$(id+'pg').style.display=show?'block':'none'}
+function err(id,m){var e=$(id+'e');e.style.display='block';e.textContent='â  '+m}
+function herr(id){$(id+'e').style.display='none'}
+function esc(s){if(!s)return 'â';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function tog(el){el.classList.toggle('open')}
+function cpytxt(txt,btn){navigator.clipboard.writeText(txt).then(function(){var o=btn.textContent;btn.textContent='â CopiÃ©';setTimeout(function(){btn.textContent=o},1800)})}
+function upaddr(l){var e=$('apill');e.style.display='block';e.textContent=l}
+
+// ââ TAB 1 QUALIFICATION ââ
+async function q1(){
+  var addr=$('qa').value.trim();
+  if(!addr){err('q','Adresse requise');return}
+  herr('q');$('qbtn').disabled=true;$('qr').style.display='none';pgv('q',true);pg('q',5,'Envoiâ¦');
+  try{
+    var r=await fetch('/api/qualify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,da:$('qda').value,dc:$('qdc').value,annee:$('qan').value})});
+    var d=await r.json();
+    if(!d.ok)throw new Error(d.error||'Erreur');
+    G=d.geo;upaddr(G.label);
+    pg('q',50,'Scoringâ¦');await tick(200);
+    var sc=score(d.fi,$('qda').value,$('qdc').value,$('qan').value);
+    pg('q',100,'TerminÃ©');await tick(300);
+    pgv('q',false);renderQ(d.geo,sc);
+    $('tn1').textContent='â';$('tb1').classList.add('ck');
+    $('fa').value=G.label;$('ra').value=G.label;
+  }catch(e){err('q',e.message);pgv('q',false)}
+  $('qbtn').disabled=false;
+}
+function score(fi,da,dc,an){
+  var fts=(fi&&fi.features)||[];
+  var z=fts.find(function(f){return f.id&&f.id.startsWith('zone_urba')});
+  var ps=fts.filter(function(f){return f.id&&(f.id.startsWith('prescription')||f.id.startsWith('info_surf'))});
+  var hasTC=ps.some(function(p){return p.properties&&p.properties.libelle&&p.properties.libelle.toLowerCase().includes('bonne desserte')});
+  var hasInf=ps.some(function(p){return p.properties&&p.properties.libelle&&p.properties.libelle.toLowerCase().includes('infrastructure')});
+  var dch=da!==dc,erp=dc==='commerce',mix=dc==='mixte';
+  var sc={},al=[],docs=[];
+  function D(f,d,s,p){docs.push({f,d,s,p})}
+  function row(id,l,n){sc[id]={l,n}}
+  var f2n=[];if(z)f2n.push('Zone : '+z.properties.libelle+(z.properties.libelong?' â '+z.properties.libelong:''));
+  if(dch){f2n.push('Changement destination '+da+' â '+dc);D('F2','RÃ¨glement de zone PLU','GPU','PRIORITAIRE')}
+  f2n.push('â RÃ©cupÃ©rer le rÃ¨glement via PLU Fetcher (onglet 2)');
+  row('F2',dch?'APPROFONDIR':'STANDARD',f2n);
+  var f3n=[an==='avant1949'?'BÃ¢timent ancien â Ã©tanchÃ©itÃ© et sous-sol Ã  examiner':'Analyse standard en visite'];
+  D('F3','Photos visite (toiture, faÃ§ades, sous-sol)','Visite','STANDARD');
+  row('F3',an==='avant1949'?'APPROFONDIR':'STANDARD',f3n);
+  row('F4',an==='avant1949'?'APPROFONDIR':'STANDARD',[an==='avant1949'?'Fondations superficielles probables, planchers bois':'Pas de risque gÃ©otechnique particulier']);
+  var f5n=['DPE requis pour qualifier l\'obligation de rÃ©novation'];
+  if(an==='avant1949')f5n.push('Murs anciens â ponts thermiques, performance mÃ©diocre');
+  D('F5','DPE actuel','Vendeur / ADEME','STANDARD');row('F5',an==='avant1949'?'APPROFONDIR':'STANDARD',f5n);
+  var f6n=[];
+  if(an==='avant1949'){f6n.push('ÃlectricitÃ© < 1949 â mise aux normes probable');f6n.push('Plomberie plomb â remplacement avant 1950');D('F6','Diag. Ã©lec + gaz + CREP','DDT vendeur','STANDARD')}
+  else{f6n.push('VÃ©rification rÃ©seaux en visite');D('F6','Diag. Ã©lec + gaz','DDT vendeur','STANDARD')}
+  if(dch)f6n.push('Changement destination â redimensionnement rÃ©seaux probable');
+  row('F6',an==='avant1949'?'APPROFONDIR':'STANDARD',f6n);
+  var f7l='STANDARD',f7n=[];
+  if(dch&&erp){f7l='CRITIQUE';f7n.push('Destination ERP â commission sÃ©curitÃ©, dÃ©lai 3â9 mois');al.push({f:'F7',m:'ERP â commission sÃ©curitÃ© (3â9 mois)'})}
+  else if(dch){f7l='APPROFONDIR';f7n.push('Changement destination â vÃ©rifier famille incendie')}
+  else f7n.push('Maintien habitation â rÃ©gime standard');
+  row('F7',f7l,f7n);
+  var f8l='STANDARD',f8n=[];
+  if(dch&&erp){f8l='CRITIQUE';f8n.push('ERP â PMR obligatoire, perte 3â8% surface');al.push({f:'F8',m:'ERP â perte surface PMR 3â8%'})}
+  else f8n.push('Maintien habitation â obligations PMR limitÃ©es');
+  row('F8',f8l,f8n);
+  var f9l='STANDARD',f9n=[];
+  if(hasInf){f9l='APPROFONDIR';f9n.push('Infrastructure bruyante â isolement faÃ§ade renforcÃ©')}
+  if(an==='avant1949'){f9l='APPROFONDIR';f9n.push('Planchers bois â traitement acoustique consomme 10â15 cm HSP')}
+  if(dch&&mix){f9l='CRITIQUE';f9n.push('Mixte â NRA entre locaux (31 dB) : coÃ»t isolation Ã©levÃ©');al.push({f:'F9',m:'Mixte â NRA exigeant'})}
+  if(!f9n.length)f9n.push('Pas de risque acoustique particulier identifiÃ©');
+  row('F9',f9l,f9n);
+  var f10l='STANDARD',f10n=[];
+  if(an==='avant1949'){f10l='CRITIQUE';f10n.push('Plomb probable â CREP obligatoire');f10n.push('Amiante probable â DAPP avant tout chiffrage');al.push({f:'F10',m:'Amiante + plomb probables â DAPP + CREP avant chiffrage'});D('F10','DAPP + CREP','Diagnostiqueur certifiÃ©','URGENT')}
+  else if(an==='1949-1997'){f10l='APPROFONDIR';f10n.push('Amiante possible selon matÃ©riaux');D('F10','DAPP amiante','Diagnostiqueur certifiÃ©','PRIORITAIRE')}
+  else f10n.push('BÃ¢timent aprÃ¨s 1997 â risque amiante faible');
+  D('F10','ERP termites si zone Ã  risque','PrÃ©fecture','STANDARD');
+  row('F10',f10l,f10n);
+  return{sc,al,docs,zone:z,pscs:ps};
+}
+function renderQ(geo,s){
+  var z=s.zone,sc=s.sc,al=s.al,docs=s.docs;
+  var FAMS=[{id:'F2',n:'RÃ©glementation et droit des sols'},{id:'F3',n:'Enveloppe du bÃ¢timent'},{id:'F4',n:'Structure et gros Åuvre'},{id:'F5',n:'Performance Ã©nergÃ©tique'},{id:'F6',n:'RÃ©seaux et fluides'},{id:'F7',n:'SÃ©curitÃ© incendie'},{id:'F8',n:'AccessibilitÃ© PMR'},{id:'F9',n:'Acoustique'},{id:'F10',n:'MatÃ©riaux dangereux'}];
+  var CL={STANDARD:' b-ok',APPROFONDIR:' b-wn',CRITIQUE:' b-er'};
+  var LB={STANDARD:'Standard',APPROFONDIR:'Ã approfondir',CRITIQUE:'Critique'};
+  var std=0,wn=0,cr=0;
+  FAMS.forEach(function(f){var l=(sc[f.id]||{}).l||'STANDARD';if(l==='STANDARD')std++;else if(l==='APPROFONDIR')wn++;else cr++});
+  var h='<div class="fade">';
+  h+='<div class="card" style="margin-bottom:12px"><div style="font-size:18px;font-weight:600;margin-bottom:3px">'+esc(geo.city||geo.label)+'</div>';
+  h+='<div style="font-size:11px;color:var(--c3);margin-bottom:6px">'+esc(geo.label)+'</div>';
+  h+='<div>';
+  h+='<span class="tag">INSEE '+esc(geo.insee)+'</span>';
+  if(z)h+='<span class="tag hl">Zone '+esc(z.properties.libelle)+'</span>';
+  h+='<span class="tag ok">GPU â</span></div></div>';
+  if(al.length){h+='<div class="card alert" style="margin-bottom:12px"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--er);font-weight:600;margin-bottom:6px">â Alertes â '+al.length+' signal(s)</div>';al.forEach(function(a){h+='<div style="font-size:12px;color:var(--c2);padding:2px 0">â <b>['+a.f+']</b> '+esc(a.m)+'</div>'});h+='</div>'}
+  h+='<div class="score"><div class="sc"><div class="sc-n" style="color:var(--ok)">'+std+'</div><div class="sc-l">Standard</div></div><div class="sc"><div class="sc-n" style="color:var(--wn)">'+wn+'</div><div class="sc-l">Approfondir</div></div><div class="sc"><div class="sc-n" style="color:var(--er)">'+cr+'</div><div class="sc-l">Critique</div></div><div class="sc"><div class="sc-n" style="color:var(--c2)">'+docs.length+'</div><div class="sc-l">Documents</div></div></div>';
+  h+='<div class="sec">Familles techniques</div>';
+  FAMS.forEach(function(f){var d=sc[f.id]||{l:'STANDARD',n:[]};h+='<div class="card'+(d.l==='STANDARD'?' open':'')+'"><div class="card-h" onclick="tog(this.parentElement)"><span style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">'+f.id+' â '+f.n+'</span><span class="badge'+CL[d.l]+'">'+(LB[d.l]||d.l)+'</span></div><div class="card-body">';(d.n||[]).forEach(function(n){h+='<div style="font-size:12px;color:var(--c3);padding:2px 0;display:flex;gap:5px"><span style="color:var(--acc);flex-shrink:0">â</span>'+esc(n)+'</div>'});h+='</div></div>'});
+  if(docs.length){h+='<div class="sec" style="margin-top:14px">Documents Ã  collecter ('+docs.length+')</div>';var PC={URGENT:' b-er',PRIORITAIRE:' b-wn',STANDARD:' b-ok'};h+='<div>';docs.forEach(function(d){h+='<div class="doc-row"><div class="doc-path">'+esc(d.f)+'</div><div class="doc-info"><div class="doc-t">'+esc(d.d)+'</div><div class="doc-n">'+esc(d.s)+'</div></div><span class="badge'+PC[d.p]+'">'+d.p+'</span></div>'});h+='</div>'}
+  h+='<button class="gbtn" style="margin-top:12px" onclick="sw(2);$(\'fa\').value=\''+esc(geo.label)+'\';q2()">â PLU Fetcher (onglet 2)</button>';
+  h+='</div>';
+  $('qr').style.display='block';$('qr').innerHTML=h;
+}
+
+// ââ TAB 2 PLU FETCHER ââ
+async function q2(){
+  var addr=$('fa').value.trim();
+  if(!addr){err('f','Adresse requise');return}
+  herr('f');$('fbtn').disabled=true;$('fr').style.display='none';pgv('f',true);pg('f',5,'GÃ©olocalisationâ¦');
+  try{
+    var gr=await fetch('/api/geocode?q='+encodeURIComponent(addr)).then(function(r){return r.json()});
+    if(!gr.features||!gr.features.length)throw new Error('Adresse non trouvÃ©e');
+    var ft=gr.features[0];
+    var lat=ft.geometry.coordinates[1],lon=ft.geometry.coordinates[0];
+    var label=ft.properties.label,city=ft.properties.city,insee=ft.properties.citycode;
+    G={lat,lon,label,city,insee};upaddr(label);pg('f',25,'Zone PLUâ¦');
+    var fi=await fetch('/api/feature-info?lon='+lon+'&lat='+lat).then(function(r){return r.json()});
+    if(fi.error)throw new Error('GPU : '+fi.error);
+    var fts=(fi.features)||[];
+    var zone=fts.find(function(f){return f.id&&f.id.startsWith('zone_urba')});
+    var doc=fts.find(function(f){return f.id&&f.id.startsWith('document')});
+    var muni=fts.find(function(f){return f.id&&f.id.startsWith('municipality')});
+    var pscs=fts.filter(function(f){return f.id&&(f.id.startsWith('prescription')||f.id.startsWith('info_surf'))});
+    var docId=doc&&doc.properties&&doc.properties.id;
+    var ins=muni&&muni.properties&&muni.properties.insee||insee;
+    pg('f',55,'PiÃ¨ces Ã©critesâ¦');
+    var files=[];
+    if(docId){var fr=await fetch('/api/plu-files/'+docId).then(function(r){return r.json()});if(Array.isArray(fr))files=fr}
+    pg('f',100,'TerminÃ©');await tick(300);pgv('f',false);
+    var PLU={zone,doc,muni,pscs,files,docId,insee:ins,lat,lon,label,city};
+    renderF(PLU);
+    $('tn2').textContent='â';$('tb2').classList.add('ck');
+    $('ra').value=label;
+    if(zone&&zone.properties)$('rz').value=zone.properties.libelle||'';
+  }catch(e){err('f',e.message);pgv('f',false)}
+  $('fbtn').disabled=false;
+}
+function renderF(D){
+  var z=D.zone||{properties:{}},doc=D.doc||{properties:{}},ps=D.pscs||[],files=D.files||[];
+  var base='https://data.geopf.fr/annexes/gpu/documents/DU_'+D.insee+'/'+(D.docId||'')+'/';
+  var tcP=ps.find(function(p){return p.properties&&p.properties.libelle&&p.properties.libelle.toLowerCase().includes('bonne desserte')});
+  var reg=files.find(function(f){var n=(f.name||'').toLowerCase(),t=(f.title||'').toLowerCase();return t==='rÃ¨glement Ã©crit'||(n.includes('_reglement_')&&!n.includes('graphique'))});
+  if(!reg)reg=files.find(function(f){var n=(f.name||'').toLowerCase();return n.includes('reglement')&&!n.includes('graphique')&&!n.includes('procedure')&&!n.includes('rapport')&&!n.includes('padd')});
+  var OR={'ProcÃ©dures':1,'Rapport de prÃ©sentation':2,'RÃ¨glements':3,'Orientations d\'amÃ©nagement et de programmation':4,'Annexes':5};
+  var sorted=files.slice().sort(function(a,b){return (OR[a.path]||9)-(OR[b.path]||9)});
+  var h='<div class="fade">';
+  h+='<div class="card" style="margin-bottom:10px"><div style="font-size:18px;font-weight:600;margin-bottom:2px">'+esc(D.city)+'</div><div style="font-size:11px;color:var(--c3);margin-bottom:6px">'+esc(D.label)+'</div><div>';
+  h+='<span class="tag">INSEE '+esc(D.insee)+'</span>';
+  h+='<span class="tag hl">'+esc(doc.properties.du_type||'PLU')+'</span>';
+  if(doc.properties.name)h+='<span class="tag">'+esc(doc.properties.name)+'</span>';
+  h+='<span class="tag ok">'+files.length+' piÃ¨ces</span></div></div>';
+  if(z.properties.libelle){h+='<div class="card zone" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';h+='<div><div style="font-family:\'DM Mono\',monospace;font-size:18px;color:var(--acc);font-weight:500">Zone '+esc(z.properties.libelle)+'</div>';if(z.properties.libelong)h+='<div style="font-size:12px;color:var(--c2)">'+esc(z.properties.libelong)+'</div>';h+='</div>';h+='<a style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--acc);text-decoration:none;border:1px solid rgba(143,191,159,.3);padding:5px 10px;border-radius:3px" href="https://www.geoportail-urbanisme.gouv.fr/map/#tile=1&zoom=18&lon='+D.lon+'&lat='+D.lat+'" target="_blank">â GPU</a>';h+='</div>'}
+  if(tcP){h+='<div style="background:rgba(76,175,125,.05);border:1px solid rgba(76,175,125,.25);border-radius:5px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--c2)"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ok);font-weight:600;margin-bottom):2px">â Bonne desserte en transport en commun</div>'+esc(tcP.properties.libelle)+'<div style="font-size:10px;color:var(--c4);margin-top:2px">Impact Art. 12 : obligation stationnement rÃ©duite</div></div>'}
+  else if(z.properties.libelle){h+='<div style="background:rgba(212,76,58,.05);border:1px solid rgba(212,76,58,.2);border-radius:5px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--c2)"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--er);font-weight:600;margin-bottom):2px">â Hors pÃ©rimÃ¨tre bonne desserte TC</div>Obligation stationnement pleine applicable.</div>'}
+  var op=ps.filter(function(p){return p.properties&&p.properties.libelle&&p!==tcP});
+  if(op.length){h+='<div class="sec">Prescriptions sur la parcelle</div>';op.forEach(function(p){if(p.properties.libelle)h+='<div style="font-size:11px;color:var(--c3);padding:5px 10px;background:var(--s1);border-radius:4px;border-left:2px solid var(--wn);margin-bottom:4px">'+esc(p.properties.libelle)+'</div>'})}
+  if(files.length){h+='<div class="sec">PiÃ¨ces Ã©crites ('+files.length+')</div>';sorted.forEach(function(file){var isR=reg&&file.name===reg.name;var url=base+file.name;h+='<div class="doc-row'+(isR?' star':'')+'"><div class="doc-path">'+esc(file.path||'â')+'</div><div class="doc-info"><div class="doc-t">'+(isR?'<b>â '+esc(file.title)+'</b>':esc(file.title||file.name))+'</div><div class="doc-n">'+esc(file.name)+'</div></div><div class="doc-btns"><a class="dbtn dbtn-o" href="'+esc(url)+'" target="_blank">â PDF</a>'+(isR?'<button class="dbtn dbtn-r" onclick="toReader(\''+esc(url)+'\',\''+esc(file.name)+'\')">â Reader</button>':'')+'</div></div>'})}
+  if(reg){var ru=base+reg.name;h+='<div style="background:var(--s1);border:1px solid var(--b2);border-radius:5px;padding:12px 14px;margin-top:4px"><div class="sec" style="border:none;padding:0;margin-bottom:6px">RÃ¨glement â prÃªt pour l\'analyse</div><div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--c4);margin-bottom:8px;word-break:break-all">'+esc(ru)+'</div><button class="gbtn" onclick="toReader(\''+esc(ru)+'\',\''+esc(reg.name)+'\')">Analyser dans le PLU Reader â</button><button class="gbtn" style="margin-left:6px" onclick="cpytxt(\''+esc(ru)+'\',this)">â Copier URL</button></div>'}
+  h+='</div>';
+  $('fr').style.display='block';$('fr').innerHTML=h;
+}
+function toReader(url,name){window.open(url,'_blank');sw3();var e=$('re');e.style.display='block';e.style.background='rgba(143,191,159,.07)';e.style.borderColor='rgba(143,191,159,.2)';e.style.color='var(--acc)';e.textContent='ð '+name+' â PDF ouvert. Une fois tÃ©lÃ©chargÃ©, glisse-le dans la zone ci-dessous.'}
+
+var rdrop=$('rdrop');
+rdrop.addEventListener('dragover',function(e){e.preventDefault();rdrop.classList.add('drag')});
+rdrop.addEventListener('dragleave',function(){rdrop.classList.remove('drag')});
+rdrop.addEventListener('drop',function(e){e.preventDefault();rdrop.classList.remove('drag');var f=e.dataTransfer.files[0];if(f)setRF(f)});
+function rfile(e){var f=e.target.files[0];if(f)setRF(f)}
+function setRF(f){
+  if(!f.name.toLowerCase().endsWith('.pdf')){err('r','PDF requis');return}
+  if(f.size>25*1024*1024){err('r','Fichier trop lourd (max 25 Mo)');return}
+  rF=f;$('rfn').textContent='â '+f.name+' ('+(f.size/1024/1024).toFixed(1)+' Mo)';
+  rdrop.classList.add('has');$('rbtn').disabled=false;
+}
+async function q3(){
+  if(!rF){err('r','PDF requis');return}
+  herr('r');$('rbtn').disabled=true;$('rr').style.display='none';pgv('r',true);pg('r',5,'Envoi du PDFâ¦');
+  var fd=new FormData();
+  fd.append('pdf',rF);fd.append('address',$('ra').value.trim());fd.append('zone',$('rz').value.trim());fd.append('da',$('rda').value);fd.append('dc',$('rdc').value);
+  try{
+    var prog=10,iv=setInterval(function(){prog=Math.min(prog+1.2,88);pg('r',Math.round(prog),'Analyse IAâ¦')},600);
+    var res=await fetch('/api/analyze-plu',{method:'POST',body:fd});
+    clearInterval(iv);
+    if(!res.ok){ var e=await res.json();throw new Error(e.error||'Erreur serveur')}
+    var data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Erreur API');
+    pg('r',100,'Analyse terminÃ©e');await tick(400);pgv('r",false);
+    if(data.result)renderR(data.result);
+    else{$('rr').style.display='block';$('rr').innerHTML='<div class="raw"><div class="raw-h"><div class="raw-t">RÃ©sultat brut</div><button class="gbtn" onclick="cpytxt($(\'raw-f2b\').textContent,this)">â Copier</button></div><div class="raw-b" id="raw-f2b">'+esc(data.raw||'')+'</div></div>' }
+    $('tn3').textContent='â'';$('tb3').classList.add('ck');
+  }catch(e){err('r',e.message);pgv('r',false)}
+  $('rbtn').disabled=false;
+}
+k){var e=await res.json();throw new Error(e.error||'Erreur serveur')}
+    var data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Erreur API');
+    pg('r',100,'TerminÃ©');await tick(300);pgv('r',false);
+    if(data.result)renderR(data.result);
+    else{$('rr').style.display='block';$('rr').innerHTML='<div class="raw"><div class="raw-h"><div class="raw-t">RÃ©sultat brut</div><button class="gbtn" onclick="cpytxt(this.parentElement.nextElementSibling.textContent,this)">â Copier</button></div><div class="raw-b">'+esc(data.raw||'')+'</div></div>'}
+    $('tn3').textContent='â';$('tb3').classList.add('ck');
+  }catch(e){err('r',e.message);pgv('r',false)}
+  $('rbtn').disabled=false;
+}
+function renderR(P){
+  var cM={'COMPATIBLE':'b-ok','SOUS CONDITIONS':'b-wn','INCOMPATIBLE':'b-er','NON DÃTERMINABLE':'b-na'};
+  var dch=$('rda').value!==$('rdc').value;
+  var sg=P.signaux_decisionnels||[];
+  var crit=sg.filter(function(s){return s.niveau==='CRITIQUE'});
+  function sec(t,b,bc,rows){
+    var r='<div class="card open" style="margin-bottom:8px"><div class="card-h" onclick="tog(this.parentElement)"><span style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">'+t+'</span>'+(b?'<span class="badge '+(bc||'b-na')+'">'+esc(b)+'</span>':'')+'</div><div class="card-body">';
+    rows.forEach(function(row){if(!row)return;r+='<div class="kv"><div class="k">'+esc(row.k)+'</div><div class="v'+(row.c?' '+row.c:'')+'">'+esc(row.v)+'</div></div>'});
+    r+='</div></div>';return r;
+  }
+  var tc=P.bonne_desserte_tc==='OUI'?'b-ok':P.bonne_desserte_tc==='NON'?'b-wn':'b-na';
+  var hs=P.hauteur_max_m?(P.hauteur_max_m>=12?'b-ok':P.hauteur_max_m>=8?'b-wn':'b-er'):'b-na';
+  var es=P.emprise_max_pct?(P.emprise_max_pct>=50?'b-ok':P.emprise_max_pct>=30?'b-wn':'b-er'):'b-na';
+  var h='<div class="fade">';
+  h+='<div class="card" style="margin-bottom:10px"><div style="font-size:18px;font-weight:600;margin-bottom:2px">Zone '+esc(P.zone||'?')+' â '+esc($('ra').value||'â')+'</div>';
+  if(P.zone_libelle)h+='<div style="font-size:11px;color:var(--c3);margin-bottom:6px">'+esc(P.zone_libelle)+'</div>';
+  h+='<div><span class="tag hl">'+esc(P.document||'PLU')+'</span>';
+  if(P.date_approbation)h+='<span class="tag">ApprouvÃ© '+esc(P.date_approbation)+'</span>';
+  h+='<span class="tag '+(P.en_revision?'wn':'ok')+'">'+(P.en_revision?'â  En rÃ©vision':'ApprouvÃ©')+'</span>';
+  h+='<span class="tag">TC : '+esc(P.bonne_desserte_tc||'?')+'</span></div></div>';
+  if(crit.length){h+='<div class="card alert" style="margin-bottom:10px"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--er);font-weight:600;margin-bottom:6px">â Signaux critiques â '+crit.length+'</div>';crit.forEach(function(s){h+='<div style="font-size:12px;color:var(--c2);padding:2px 0">â <b>['+esc(s.impact.toUpperCase())+']</b> '+esc(s.detail)+'</div>'});h+='</div>'}
+  h+=sec('Destinations â Art. '+(P.article_emprise||'1â2'),P.compatibilite_destination_cible,cM[P.compatibilite_destination_cible]||'b-na',[{k:'AutorisÃ©es',v:(P.destinations_autorisees||[]).join(', ')},{k:'Sous conditions',v:(P.destinations_soumises_conditions||[]).join(' | ')},{k:'Interdites',v:(P.destinations_interdites||[]).join(', ')},dch?{k:'CompatibilitÃ© cible',v:P.compatibilite_destination_cible,c:(cM[P.compatibilite_destination_cible]?'ok':'')}:null,P.compatibilite_detail?{k:'DÃ©tail',v:P.compatibilite_detail}:null].filter(Boolean));
+  h+=sec('Emprise au sol â Art. '+esc(P.article_emprise||'9'),P.emprise_max_pct?P.emprise_max_pct+'%':'â',es,[{k:'Emprise max',v:P.emprise_max_pct?P.emprise_max_pct+'%':'â',c:'hl'},{k:'RÃ¨gle',v:P.emprise_max_detail},{k:'DÃ©rogation',v:P.emprise_derogation}]);
+  h+=sec('Hauteur maximale â Art. '+esc(P.article_hauteur||'10'),P.hauteur_max_m?P.hauteur_max_m+' m':'â',hs,[{k:'Hauteur max',v:P.hauteur_max_m?P.hauteur_max_m+' m':'â',c:'hl'},{k:'RÃ¨gle',v:P.hauteur_max_detail},{k:'Combles',v:P.hauteur_combles},{k:'DÃ©rogation',v:P.hauteur_derogation}]);
+  h+=sec('Implantation & prospects â Art. 6â7',null,null,[{k:'Alignement',v:P.alignement},{k:'Retrait voie',v:P.retrait_voie_m?P.retrait_voie_m+' m':'Non imposÃ©'},{k:'Avec baies',v:P.prospect_limites_sep_avec_baies},{k:'Sans baie',v:P.prospect_limites_sep_sans_baies}]);
+  h+=sec('Stationnement â Art. '+esc(P.article_stationnement||'12'),P.bonne_desserte_tc==='OUI'?'PÃ©rimÃ¨tre TC':P.bonne_desserte_tc==='NON'?'Hors TC':'TC ?',tc,[{k:'Bonne desserte TC',v:P.bonne_desserte_tc+(P.bonne_desserte_tc_detail?' â '+P.bonne_desserte_tc_detail:''),c:P.bonne_desserte_tc==='OUI'?'ok':''},{k:'Habitation',v:P.stat_habitation},{k:'Bureaux',v:P.stat_bureaux},{k:'Commerce/ERP',v:P.stat_commerce},{k:'VÃ©los',v:P.stat_velos}]);
+  h+=sec('Aspect extÃ©rieur â Art. '+esc(P.article_aspect||'11'),P.secteur_patrimoine&&P.secteur_patrimoine!=='aucun'?P.secteur_patrimoine:'Standard',P.secteur_patrimoine&&P.secteur_patrimoine!=='aucun'?'b-wn':'b-ok',[{k:'Toitures',v:P.toitures_prescriptions},{k:'FaÃ§ades',v:P.facades_prescriptions},{k:'ClÃ´tures',v:P.clotures_prescriptions}]);
+  h+=sec('VÃ©gÃ©talisation â Art. '+esc(P.article_vegetation||'13'),P.espaces_verts_pct?P.espaces_verts_pct+'%':'â','b-na',[{k:'Espaces verts min',v:P.espaces_verts_pct?P.espaces_verts_pct+'%':'â'},{k:'Pleine terre min',v:P.pleine_terre_pct?P.pleine_terre_pct+'%':'â'},{k:'Arbres',v:P.arbres_obligation}]);
+  h+=sec('SUP & contraintes',(P.sup_identifies||[]).length>0?'SUP prÃ©sentes':'Standard',(P.sup_identifies||[]).length>0?'b-wn':'b-ok',[{k:'SUP',v:(P.sup_identifies||[]).join(', ')||'Aucune'},{k:'Secteur patrimonial',v:P.secteur_patrimoine},{k:'Zone inondable',v:P.secteur_inondable}]);
+  if(sg.length)h+=sec('Signaux dÃ©cisionnels',crit.length?crit.length+' critique(s)':'â',crit.length?'b-er':'b-ok',sg.map(function(s){var c=s.niveau==='CRITIQUE'?'er':s.niveau==='APPROFONDIR'?'wn':'ok';return{k:'['+s.impact.toUpperCase()+'] '+s.sujet,v:s.detail,c:c}}));
+  if(P.notes_architecte)h+='<div class="nb ok" style="margin-top:8px">ð '+esc(P.notes_architecte)+'</div>';
+  var tx=buildF2(P);
+  h+='<div class="raw"><div class="raw-h"><div class="raw-t">Bloc F2 â texte rapport</div><button class="gbtn" onclick="cpytxt($(\'rf2txt\').textContent,this)">â Copier</button></div><div class="raw-b" id="rf2txt">'+esc(tx)+'</div></div>';
+  h+='</div>';
+  $('rr').style.display='block';$('rr').innerHTML=h;
+}
+function buildF2(P){
+  var l=[];
+  l.push('F2 â PLU / COMPATIBILITÃ PROGRAMME');
+  l.push('Zone : '+P.zone+(P.zone_libelle?' â '+P.zone_libelle:''));
+  l.push('Document : '+P.document+' Â· ApprouvÃ© '+P.date_approbation);
+  l.push('');l.push('DESTINATIONS');
+  l.push('AutorisÃ©es : '+(P.destinations_autorisees||[]).join(', '));
+  l.push('CompatibilitÃ© cible : '+P.compatibilite_destination_cible);
+  if(P.compatibilite_detail)l.push('â '+P.compatibilite_detail);
+  l.push('');l.push('EMPRISE (Art. '+P.article_emprise+')');
+  l.push('Max : '+(P.emprise_max_pct?P.emprise_max_pct+'%':'â'));
+  l.push(P.emprise_max_detail||'');
+  l.push('');l.push('HAUTEUR (Art. '+P.article_hauteur+')');
+  l.push('Max : '+(P.hauteur_max_m?P.hauteur_max_m+' m':'â'));
+  l.push(P.hauteur_max_detail||'');
+  l.push('');l.push('STATIONNEMENT (Art. '+P.article_stationnement+')');
+  l.push('TC : '+P.bonne_desserte_tc+(P.bonne_desserte_tc_detail?' â '+P.bonne_desserte_tc_detail:''));
+  l.push('Habitation : '+P.stat_habitation);
+  l.push('Bureaux : '+P.stat_bureaux);
+  l.push('');l.push('ASPECT (Art. '+P.article_aspect+')');
+  l.push('Toitures : '+P.toitures_prescriptions);
+  l.push('FaÃ§ades : '+P.facades_prescriptions);
+  if((P.sup_identifies||[]).length){l.push('');l.push('SUP : '+(P.sup_identifies||[]).join(', '))}
+  if((P.signaux_decisionnels||[]).length){l.push('');l.push('SIGNAUX');(P.signaux_decisionnels||[]).forEach(function(s){l.push(s.niveau+' ['+s.impact.toUpperCase()+'] '+s.sujet+' : '+s.detail)})}
+  return l.join('\n');
+}
+</script>
+</body>
+</html>
